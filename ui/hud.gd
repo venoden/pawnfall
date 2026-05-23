@@ -3,6 +3,7 @@ extends CanvasLayer
 signal again_requested
 signal bye_requested
 signal restart_requested
+signal resume_requested
 
 var player_bar: ProgressBar
 var player_value: Label
@@ -13,11 +14,14 @@ var enemy_value: Label
 var overlay: Control
 var overlay_title: Label
 var boss_kill_pose: TextureRect
+var victory_pose: TextureRect
 var again_button: Button
 var bye_button: Button
 var restart_button: Button
+var resume_button: Button
 
 const BOSS_KILL_POSE_TEXTURE := preload("res://sprites/goblin_boss1.png")
+const VICTORY_POSE_TEXTURE := preload("res://sprites/celerbatory_pawn.png")
 const MACE_TEXTURE := preload("res://sprites/mace.png")
 const BLUNTBOW_TEXTURE := preload("res://sprites/bluntbow.png")
 const MACE_REGION := Rect2(638, 370, 272, 238)
@@ -25,6 +29,7 @@ const BLUNTBOW_REGION := Rect2(170, 330, 590, 360)
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_hud()
 	show_gameplay()
 
@@ -55,24 +60,40 @@ func set_enemy_defeated_count(count: int) -> void:
 func show_gameplay() -> void:
 	overlay.visible = false
 	boss_kill_pose.visible = false
+	victory_pose.visible = false
 
 
 func show_victory() -> void:
 	overlay_title.text = "Victory"
 	overlay.visible = true
 	boss_kill_pose.visible = false
+	victory_pose.visible = true
 	again_button.visible = true
 	bye_button.visible = true
 	restart_button.visible = false
+	resume_button.visible = false
 
 
 func show_defeat(source: StringName = &"") -> void:
 	overlay_title.text = "Defeated"
 	overlay.visible = true
 	boss_kill_pose.visible = source == &"boss_club"
+	victory_pose.visible = false
 	again_button.visible = false
 	bye_button.visible = true
 	restart_button.visible = true
+	resume_button.visible = false
+
+
+func show_pause() -> void:
+	overlay_title.text = "Paused"
+	overlay.visible = true
+	boss_kill_pose.visible = false
+	victory_pose.visible = false
+	again_button.visible = false
+	restart_button.visible = false
+	resume_button.visible = true
+	bye_button.visible = true
 
 
 func _build_hud() -> void:
@@ -150,19 +171,30 @@ func _build_hud() -> void:
 	boss_kill_pose.visible = false
 	center.add_child(boss_kill_pose)
 
+	victory_pose = TextureRect.new()
+	victory_pose.texture = VICTORY_POSE_TEXTURE
+	victory_pose.custom_minimum_size = Vector2(164, 164)
+	victory_pose.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	victory_pose.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	victory_pose.visible = false
+	center.add_child(victory_pose)
+
 	var buttons := HBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	buttons.add_theme_constant_override("separation", 12)
 	center.add_child(buttons)
 
 	again_button = _make_button("AGAIN!")
+	resume_button = _make_button("Resume")
 	bye_button = _make_button("I quit.")
 	restart_button = _make_button("AGAIN!")
 	buttons.add_child(again_button)
+	buttons.add_child(resume_button)
 	buttons.add_child(restart_button)
 	buttons.add_child(bye_button)
 
 	again_button.pressed.connect(func() -> void: again_requested.emit())
+	resume_button.pressed.connect(func() -> void: resume_requested.emit())
 	bye_button.pressed.connect(func() -> void: bye_requested.emit())
 	restart_button.pressed.connect(func() -> void: restart_requested.emit())
 

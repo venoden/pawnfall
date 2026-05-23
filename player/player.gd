@@ -184,6 +184,7 @@ func _spawn_starter_sweep(attack_direction: Vector2, swing_side: int) -> void:
 	var sweep: AttackSweep = starter_sweep_scene.instantiate() as AttackSweep
 	if sweep == null:
 		return
+	sweep.process_mode = Node.PROCESS_MODE_PAUSABLE
 	get_tree().current_scene.add_child(sweep)
 	sweep.global_position = global_position
 	sweep.setup(attack_direction, starter_sweep_variant, swing_side)
@@ -194,6 +195,7 @@ func _fire_crossbow() -> void:
 	var projectile: Node2D = blunt_projectile_scene.instantiate() as Node2D
 	if projectile == null:
 		return
+	projectile.process_mode = Node.PROCESS_MODE_PAUSABLE
 	get_tree().current_scene.add_child(projectile)
 	projectile.global_position = global_position + facing * 36.0
 	projectile.call("setup", facing, crossbow_damage, crossbow_burn_damage_per_spike, crossbow_burn_spike_count, "player")

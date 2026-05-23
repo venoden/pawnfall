@@ -10,7 +10,7 @@ radius = 18.0
 script = ExtResource("1_torch_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.22, 0.22)
+scale = Vector2(0.17, 0.17)
 region_enabled = true
 region_rect = Rect2(664, 292, 186, 370)
 texture = ExtResource("2_torch_sprite")

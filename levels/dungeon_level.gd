@@ -262,7 +262,7 @@ func _current_enemy_count() -> int:
 
 
 func _queue_enemy_respawn() -> void:
-	await get_tree().create_timer(enemy_respawn_delay).timeout
+	await get_tree().create_timer(enemy_respawn_delay, false).timeout
 	if not is_inside_tree() or boss_defeated:
 		return
 	if _current_enemy_count() < enemy_count:

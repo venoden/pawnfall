@@ -63,7 +63,7 @@ func _refresh_sprite() -> void:
 		sprite.scale = Vector2(0.16, 0.16)
 	else:
 		sprite.texture = HEALTH_TEXTURE
-		sprite.scale = Vector2(0.08, 0.08)
+		sprite.scale = Vector2(0.24, 0.24)
 		sprite.position = base_sprite_position
 
 
