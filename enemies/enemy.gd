@@ -9,10 +9,14 @@ signal died(enemy: Node)
 @export var attack_interval := 0.72
 @export var detection_radius := 510.0
 @export var collision_radius := 17.0
+@export var contact_padding := 8.0
 
 @export_category("Visuals")
 @export var turn_smoothing := 9.0
 @export var hit_flash_duration := 0.14
+@export var walk_turn_rate := 8.0
+@export var walk_turn_amount := 0.065
+@export var sprite_rotation_offset := PI
 
 @export_category("Burn")
 @export var burn_feedback_interval := 0.72
@@ -32,12 +36,15 @@ var dead := false
 var wander_angle := 0.0
 var facing := Vector2.DOWN
 var hit_flash_timer := 0.0
+var walk_turn_timer := 0.0
+var walk_turn_sway := 0.0
 
 
 func _ready() -> void:
 	current_health = max_health
 	wander_angle = randf() * TAU
 	player = get_tree().get_first_node_in_group("player") as Node2D
+	sprite.rotation = sprite_rotation_offset
 
 
 func _physics_process(delta: float) -> void:
@@ -66,12 +73,17 @@ func _physics_process(delta: float) -> void:
 
 	if desired.length() > 0.0:
 		var desired_direction: Vector2 = desired.normalized()
+		walk_turn_timer += delta * walk_turn_rate
+		walk_turn_sway = sin(walk_turn_timer) * walk_turn_amount
 		_update_facing(desired_direction, delta)
 		var next_position := global_position + desired_direction * move_speed * delta
 		velocity = desired_direction * move_speed if not _blocked_by_ward(next_position) else Vector2.ZERO
 		move_and_slide()
+		distance_to_player = global_position.distance_to(player.global_position)
+	else:
+		walk_turn_sway = lerpf(walk_turn_sway, 0.0, _turn_blend(delta))
 
-	if distance_to_player <= collision_radius + 24.0 and attack_timer <= 0.0:
+	if distance_to_player <= _contact_damage_radius() and attack_timer <= 0.0:
 		if not _player_inside_ward():
 			player.call("take_damage", contact_damage, "enemy")
 		attack_timer = attack_interval
@@ -112,6 +124,13 @@ func apply_mace_knockback(swing_side: int, force: float) -> void:
 	apply_knockback(Vector2(side * force, 0.0))
 
 
+func apply_mace_hit_reaction(hit_direction: Vector2, force: float) -> void:
+	var direction: Vector2 = hit_direction.normalized()
+	if direction.length_squared() <= 0.001:
+		direction = facing
+	apply_knockback(direction * force)
+
+
 func _start_hit_flash() -> void:
 	hit_flash_timer = hit_flash_duration
 	sprite.modulate = Color(1.0, 0.28, 0.28)
@@ -130,11 +149,28 @@ func _update_facing(direction: Vector2, delta: float) -> void:
 		return
 	facing = direction.normalized()
 	var target_rotation: float = facing.angle() + PI / 2.0
+	target_rotation += sprite_rotation_offset + walk_turn_sway
 	sprite.rotation = lerp_angle(sprite.rotation, target_rotation, _turn_blend(delta))
 
 
 func _turn_blend(delta: float) -> float:
 	return clampf(1.0 - exp(-turn_smoothing * delta), 0.0, 1.0)
+
+
+func _player_contact_radius() -> float:
+	if not is_instance_valid(player):
+		return 24.0
+	var collision_shape: CollisionShape2D = player.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision_shape == null or collision_shape.shape == null:
+		return 24.0
+	if collision_shape.shape is CircleShape2D:
+		var circle_shape: CircleShape2D = collision_shape.shape as CircleShape2D
+		return circle_shape.radius
+	return 24.0
+
+
+func _contact_damage_radius() -> float:
+	return collision_radius + _player_contact_radius() + contact_padding
 
 
 func _update_burn(delta: float) -> void:

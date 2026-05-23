@@ -1,12 +1,12 @@
 [gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1_player_script"]
-[ext_resource type="Texture2D" path="res://sprites/main_pawn.png" id="2_player_sprite"]
+[ext_resource type="Texture2D" path="res://sprites/main_3_pawn.png" id="2_player_sprite"]
 [ext_resource type="Texture2D" path="res://sprites/leg.svg" id="3_leg_sprite"]
 [ext_resource type="Texture2D" path="res://sprites/mace.png" id="4_starter_weapon"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_player"]
-radius = 18.0
+radius = 32.0
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_player_script")
@@ -24,10 +24,12 @@ visible = false
 texture = ExtResource("3_leg_sprite")
 
 [node name="Body" type="Sprite2D" parent="Visual"]
-scale = Vector2(0.18, 0.18)
+rotation = 3.14159
+scale = Vector2(0.4, 0.4)
 texture = ExtResource("2_player_sprite")
 
 [node name="WeaponSprite" type="Sprite2D" parent="Visual"]
+z_index = 2
 position = Vector2(31, 7)
 rotation = -0.55
 scale = Vector2(0.36, 0.36)
@@ -40,6 +42,6 @@ shape = SubResource("CircleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 enabled = true
-zoom = Vector2(1.48, 1.48)
+zoom = Vector2(1.6, 1.6)
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0

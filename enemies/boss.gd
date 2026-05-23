@@ -9,11 +9,17 @@ signal defeated
 @export var club_hits_to_kill := 3
 @export var contact_interval := 1.05
 @export var collision_radius := 58.0
+@export var contact_padding := 10.0
 @export var reflect_damage_percent := 0.05
 @export var reflected_damage_sources: Array[StringName] = [&"starter", &"blunt", &"burn"]
+@export var room_min := Vector2(96, 96)
+@export var room_max := Vector2(1440, 928)
 
 @export_category("Visuals")
 @export var turn_smoothing := 7.5
+@export var walk_turn_rate := 3.6
+@export var walk_turn_amount := 0.11
+@export var sprite_rotation_offset := PI
 
 @export_category("Burn")
 @export var burn_feedback_interval := 0.72
@@ -31,11 +37,14 @@ var burn_spike_timer := 0.0
 var burn_feedback_timer := 0.0
 var dead := false
 var facing := Vector2.DOWN
+var walk_turn_timer := 0.0
+var walk_turn_sway := 0.0
 
 
 func _ready() -> void:
 	current_health = max_health
 	player = get_tree().get_first_node_in_group("player") as Node2D
+	sprite.rotation = sprite_rotation_offset
 	health_changed.emit(current_health, max_health)
 
 
@@ -58,12 +67,17 @@ func _physics_process(delta: float) -> void:
 	var distance_to_player := to_player.length()
 	if distance_to_player > 1.0:
 		var direction := to_player.normalized()
+		walk_turn_timer += delta * walk_turn_rate
+		walk_turn_sway = sin(walk_turn_timer) * walk_turn_amount
 		var next_position := global_position + direction * move_speed * delta
-		velocity = direction * move_speed if not _blocked_by_ward(next_position) else Vector2.ZERO
-		move_and_slide()
+		global_position = _clamp_to_room(next_position)
+		velocity = direction * move_speed
 		_update_facing(direction, delta)
+		distance_to_player = global_position.distance_to(player.global_position)
+	else:
+		walk_turn_sway = lerpf(walk_turn_sway, 0.0, _turn_blend(delta))
 
-	if distance_to_player <= collision_radius + 28.0 and contact_timer <= 0.0:
+	if distance_to_player <= _contact_damage_radius() and contact_timer <= 0.0:
 		if not _player_inside_ward():
 			player.call("take_damage", _club_damage_for_player(), &"boss_club")
 		contact_timer = contact_interval
@@ -103,11 +117,35 @@ func _update_facing(direction: Vector2, delta: float) -> void:
 		return
 	facing = direction.normalized()
 	var target_rotation: float = facing.angle() + PI / 2.0
+	target_rotation += sprite_rotation_offset + walk_turn_sway
 	sprite.rotation = lerp_angle(sprite.rotation, target_rotation, _turn_blend(delta))
 
 
 func _turn_blend(delta: float) -> float:
 	return clampf(1.0 - exp(-turn_smoothing * delta), 0.0, 1.0)
+
+
+func _player_contact_radius() -> float:
+	if not is_instance_valid(player):
+		return 28.0
+	var collision_shape: CollisionShape2D = player.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision_shape == null or collision_shape.shape == null:
+		return 28.0
+	if collision_shape.shape is CircleShape2D:
+		var circle_shape: CircleShape2D = collision_shape.shape as CircleShape2D
+		return circle_shape.radius
+	return 28.0
+
+
+func _contact_damage_radius() -> float:
+	return collision_radius + _player_contact_radius() + contact_padding
+
+
+func _clamp_to_room(position_to_check: Vector2) -> Vector2:
+	return Vector2(
+		clampf(position_to_check.x, room_min.x + collision_radius, room_max.x - collision_radius),
+		clampf(position_to_check.y, room_min.y + collision_radius, room_max.y - collision_radius)
+	)
 
 
 func _club_damage_for_player() -> float:

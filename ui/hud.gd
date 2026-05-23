@@ -99,6 +99,7 @@ func show_pause() -> void:
 func _build_hud() -> void:
 	var root := Control.new()
 	root.name = "Root"
+	root.process_mode = Node.PROCESS_MODE_ALWAYS
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 
@@ -117,7 +118,7 @@ func _build_hud() -> void:
 	top_panel.add_child(row)
 
 	_create_meter(row, "HP", true)
-	_create_meter(row, "Boss", false)
+	_create_meter(row, "Gobboss", false)
 
 	var weapon_panel := PanelContainer.new()
 	weapon_panel.custom_minimum_size = Vector2(58, 32)
@@ -137,6 +138,7 @@ func _build_hud() -> void:
 
 	overlay = Control.new()
 	overlay.name = "EndOverlay"
+	overlay.process_mode = Node.PROCESS_MODE_ALWAYS
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(overlay)
 

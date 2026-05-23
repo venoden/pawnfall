@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b7glt1ebruovj"
-path="res://.godot/imported/5_dungeon.png-6d20bd386e2b73e374955df0a53e3198.ctex"
+uid="uid://u0b255fuhql2"
+path="res://.godot/imported/goblin_topdown.png-f7ff9907a1fdc50710f973d289fd219e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/5_dungeon.png"
-dest_files=["res://.godot/imported/5_dungeon.png-6d20bd386e2b73e374955df0a53e3198.ctex"]
+source_file="res://sprites/goblin_topdown.png"
+dest_files=["res://.godot/imported/goblin_topdown.png-f7ff9907a1fdc50710f973d289fd219e.ctex"]
 
 [params]
 

@@ -57,6 +57,8 @@ var is_walking := false
 var dead := false
 var starter_sweep_variant: int = 0
 var mace_swing_side := -1
+var mace_swing_visual_timer := 0.0
+var mace_swing_visual_side := -1
 var last_damage_source: StringName = &""
 
 
@@ -79,6 +81,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	attack_timer = maxf(0.0, attack_timer - delta)
+	mace_swing_visual_timer = maxf(0.0, mace_swing_visual_timer - delta)
 	invulnerability_timer = maxf(0.0, invulnerability_timer - delta)
 
 	var input_vector: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -160,6 +163,8 @@ func _try_attack() -> void:
 func _melee_attack() -> void:
 	var swing_side: int = mace_swing_side
 	mace_swing_side *= -1
+	mace_swing_visual_timer = starter_cooldown
+	mace_swing_visual_side = swing_side
 	var attack_direction: Vector2 = facing.rotated(float(swing_side) * 0.38)
 	_spawn_starter_sweep(attack_direction, swing_side)
 	for target in get_tree().get_nodes_in_group("hostiles"):
@@ -174,8 +179,8 @@ func _melee_attack() -> void:
 		if not _has_line_of_sight_to(target_node):
 			continue
 		target_node.call("take_damage", starter_damage, &"starter")
-		if target_node.has_method("apply_mace_knockback"):
-			target_node.call("apply_mace_knockback", swing_side, 48.0)
+		if target_node.has_method("apply_mace_hit_reaction"):
+			target_node.call("apply_mace_hit_reaction", attack_direction, 48.0)
 
 
 func _spawn_starter_sweep(attack_direction: Vector2, swing_side: int) -> void:
@@ -271,11 +276,15 @@ func _update_visuals(delta: float) -> void:
 		bob = sin(walk_timer * 1.1) * 2.8
 
 	if weapon_id == crossbow_weapon_id:
-		weapon_sprite.position = Vector2(24.0, bob * 0.35)
+		weapon_sprite.position = Vector2(28.0, bob * 0.35)
 		weapon_sprite.rotation = -PI / 2.0 + flop * 0.18
 	else:
-		weapon_sprite.position = Vector2(31.0, 7.0 + bob)
-		weapon_sprite.rotation = -0.55 + flop * 0.5
+		var swing_amount := 0.0
+		if mace_swing_visual_timer > 0.0:
+			var swing_progress: float = 1.0 - mace_swing_visual_timer / starter_cooldown
+			swing_amount = sin(clampf(swing_progress, 0.0, 1.0) * PI) * float(mace_swing_visual_side)
+		weapon_sprite.position = Vector2(24.0, 12.0 + bob + swing_amount * 4.0)
+		weapon_sprite.rotation = -0.82 + flop * 0.42 + swing_amount * 0.64
 
 
 func _turn_blend(delta: float) -> float:

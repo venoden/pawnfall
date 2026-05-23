@@ -10,17 +10,11 @@ signal enemy_defeated_count_changed(count: int)
 @export var torch_scene: PackedScene = preload("res://levels/Torch.tscn")
 
 @export_category("Room")
-@export var background_texture: Texture2D = preload("res://sprites/dungeon_background.png")
-@export var room_size := Vector2(1536, 1024)
+@export var background_texture: Texture2D = preload("res://sprites/dungeon_bg_lg.png")
+@export var room_size := Vector2(1448, 1086)
 @export var tile_size := 72
-@export var wall_thickness := 96.0
+@export var wall_thickness := 72.0
 @export var obstacle_rects: Array[Rect2] = [
-	Rect2(388, 24, 70, 112),
-	Rect2(1062, 24, 70, 112),
-	Rect2(388, 896, 70, 104),
-	Rect2(1062, 896, 70, 104),
-	Rect2(24, 442, 94, 118),
-	Rect2(1418, 442, 94, 118),
 ]
 
 @export_category("Obstacles")
@@ -33,11 +27,6 @@ signal enemy_defeated_count_changed(count: int)
 	Rect2(1110, 462, 340, 150),
 ]
 @export var obstacle_positions: Array[Vector2] = [
-	Vector2(300, 304),
-	Vector2(590, 742),
-	Vector2(860, 300),
-	Vector2(1160, 742),
-	Vector2(1072, 500),
 ]
 @export var obstacle_collision_sizes: Array[Vector2] = [
 	Vector2(78, 104),
@@ -56,24 +45,24 @@ signal enemy_defeated_count_changed(count: int)
 @export var obstacle_visual_scale := 0.52
 
 @export_category("Spawns")
-@export var player_spawn := Vector2(160, 512)
-@export var boss_spawn := Vector2(1380, 512)
+@export var player_spawn := Vector2(160, 543)
+@export var boss_spawn := Vector2(1278, 543)
 @export var enemy_count := 5
 @export var enemy_spawn_points: Array[Vector2] = [
-	Vector2(420, 240),
-	Vector2(520, 820),
-	Vector2(760, 512),
-	Vector2(1040, 270),
-	Vector2(1180, 760),
-	Vector2(1280, 380),
-	Vector2(1280, 650),
+	Vector2(328, 252),
+	Vector2(386, 822),
+	Vector2(724, 318),
+	Vector2(760, 758),
+	Vector2(1058, 294),
+	Vector2(1128, 812),
+	Vector2(1244, 440),
 ]
 
 @export_category("Pickups")
 @export var health_pickup_points: Array[Vector2] = [
-	Vector2(326, 742),
-	Vector2(760, 274),
-	Vector2(1168, 636),
+	Vector2(292, 700),
+	Vector2(724, 266),
+	Vector2(1118, 656),
 ]
 @export var health_pickup_heal := 15.0
 @export var health_pickup_max_bonus := 15.0
@@ -81,15 +70,16 @@ signal enemy_defeated_count_changed(count: int)
 @export_category("Hazards")
 @export var torch_burn_dps := 3.0
 @export var torch_points: Array[Vector2] = [
-	Vector2(210, 168),
-	Vector2(210, 850),
-	Vector2(668, 508),
-	Vector2(974, 846),
-	Vector2(1316, 210),
-	Vector2(1316, 812),
+	Vector2(184, 156),
+	Vector2(184, 918),
+	Vector2(528, 224),
+	Vector2(914, 874),
+	Vector2(1264, 190),
+	Vector2(1264, 898),
 ]
 @export var enemy_respawn_delay := 5.0
 @export var bluntbow_drop_kill_count := 5
+@export var placement_retry_count := 10
 
 var player: Node2D
 var boss: Node2D
@@ -98,10 +88,16 @@ var defeated_enemy_count := 0
 var regular_goblin_kill_count := 0
 var bluntbow_dropped := false
 var boss_defeated := false
+var obstacle_variant_indices: Array[int] = []
+var placed_obstacle_indices: Array[int] = []
+var reserved_points: Array[Vector2] = []
+var reserved_radii: Array[float] = []
 
 
 func _ready() -> void:
 	randomize()
+	reserved_points.clear()
+	reserved_radii.clear()
 	_create_collision()
 	_spawn_obstacles()
 	_spawn_hazards()
@@ -159,9 +155,19 @@ func _spawn_obstacles() -> void:
 	if obstacle_texture == null:
 		return
 
-	var obstacle_total: int = mini(mini(obstacle_regions.size(), obstacle_positions.size()), obstacle_collision_sizes.size())
+	var obstacle_total: int = obstacle_positions.size()
+	placed_obstacle_indices.clear()
+	obstacle_variant_indices.clear()
 	for index in range(obstacle_total):
-		_add_obstacle(index)
+		obstacle_variant_indices.append(index % maxi(1, obstacle_regions.size()))
+	obstacle_variant_indices.shuffle()
+	if obstacle_total >= 12:
+		obstacle_variant_indices[10] = 0
+		obstacle_variant_indices[11] = 1
+	for index in range(obstacle_total):
+		if _place_obstacle_position(index):
+			_add_obstacle(index)
+			placed_obstacle_indices.append(index)
 
 
 func _add_obstacle(index: int) -> void:
@@ -174,12 +180,12 @@ func _add_obstacle(index: int) -> void:
 	var sprite: Sprite2D = Sprite2D.new()
 	sprite.texture = obstacle_texture
 	sprite.region_enabled = true
-	sprite.region_rect = obstacle_regions[index]
+	sprite.region_rect = _obstacle_region(index)
 	sprite.scale = Vector2(obstacle_visual_scale, obstacle_visual_scale)
 	body.add_child(sprite)
 
 	var shape: RectangleShape2D = RectangleShape2D.new()
-	shape.size = obstacle_collision_sizes[index]
+	shape.size = _obstacle_collision_size(index)
 	var collision: CollisionShape2D = CollisionShape2D.new()
 	collision.position = _obstacle_collision_offset(index)
 	collision.shape = shape
@@ -187,31 +193,139 @@ func _add_obstacle(index: int) -> void:
 
 
 func _obstacle_collision_offset(index: int) -> Vector2:
-	if index < obstacle_collision_offsets.size():
-		return obstacle_collision_offsets[index]
+	if not obstacle_collision_offsets.is_empty():
+		var variant_index: int = _obstacle_variant_index(index)
+		return obstacle_collision_offsets[variant_index % obstacle_collision_offsets.size()]
 	return Vector2.ZERO
+
+
+func _obstacle_region(index: int) -> Rect2:
+	if not obstacle_regions.is_empty():
+		return obstacle_regions[_obstacle_variant_index(index) % obstacle_regions.size()]
+	return Rect2()
+
+
+func _obstacle_collision_size(index: int) -> Vector2:
+	if not obstacle_collision_sizes.is_empty():
+		var variant_index: int = _obstacle_variant_index(index)
+		return obstacle_collision_sizes[variant_index % obstacle_collision_sizes.size()]
+	return Vector2(72, 72)
+
+
+func _obstacle_variant_index(index: int) -> int:
+	if index >= 0 and index < obstacle_variant_indices.size():
+		return obstacle_variant_indices[index]
+	return index
+
+
+func _place_obstacle_position(index: int) -> bool:
+	for candidate in _obstacle_candidate_positions(index):
+		obstacle_positions[index] = candidate
+		if _obstacle_position_is_safe(index):
+			return true
+	return false
+
+
+func _obstacle_candidate_positions(index: int) -> Array[Vector2]:
+	match index:
+		0:
+			return [Vector2(258, 238), Vector2(322, 310), Vector2(232, 342)]
+		1:
+			return [Vector2(520, 292), Vector2(470, 398), Vector2(604, 250)]
+		2:
+			return [Vector2(888, 252), Vector2(824, 350), Vector2(966, 306)]
+		3:
+			return [Vector2(1184, 302), Vector2(1108, 410), Vector2(1240, 404)]
+		4:
+			return [Vector2(292, 520), Vector2(376, 590), Vector2(260, 650)]
+		5:
+			return [Vector2(1128, 522), Vector2(1040, 590), Vector2(1216, 636)]
+		6:
+			return [Vector2(424, 788), Vector2(338, 744), Vector2(520, 836)]
+		7:
+			return [Vector2(704, 856), Vector2(634, 770), Vector2(776, 804)]
+		8:
+			return [Vector2(996, 786), Vector2(914, 846), Vector2(1082, 744)]
+		9:
+			return [Vector2(760, 420), Vector2(692, 476), Vector2(828, 492)]
+		10:
+			return [Vector2(548, 548), Vector2(492, 486), Vector2(584, 640)]
+		11:
+			return [Vector2(902, 606), Vector2(956, 532), Vector2(846, 674)]
+		_:
+			if index >= 0 and index < obstacle_positions.size():
+				return [obstacle_positions[index]]
+			return []
+
+
+func _obstacle_position_is_safe(index: int) -> bool:
+	var rect: Rect2 = _obstacle_collision_rect(index).grow(56.0)
+	if rect.position.x < wall_thickness or rect.end.x > room_size.x - wall_thickness:
+		return false
+	if rect.position.y < wall_thickness or rect.end.y > room_size.y - wall_thickness:
+		return false
+
+	for spawn_point in _obstacle_protected_points():
+		if rect.grow(36.0).has_point(spawn_point):
+			return false
+
+	for placed_index in placed_obstacle_indices:
+		if rect.intersects(_obstacle_collision_rect(placed_index).grow(72.0)):
+			return false
+	return true
+
+
+func _obstacle_collision_rect(index: int) -> Rect2:
+	var collision_size: Vector2 = _obstacle_collision_size(index)
+	var rect: Rect2 = Rect2(obstacle_positions[index] - collision_size * 0.5, collision_size)
+	rect.position += _obstacle_collision_offset(index)
+	return rect
+
+
+func _protected_spawn_points() -> Array[Vector2]:
+	var points: Array[Vector2] = [player_spawn, boss_spawn]
+	points.append_array(enemy_spawn_points)
+	return points
+
+
+func _obstacle_protected_points() -> Array[Vector2]:
+	var points: Array[Vector2] = _protected_spawn_points()
+	points.append_array(health_pickup_points)
+	points.append_array(torch_points)
+	return points
 
 
 func _spawn_hazards() -> void:
 	for point in torch_points:
+		var safe_point: Vector2 = _find_safe_position(point, 34.0)
+		if safe_point == Vector2.INF:
+			continue
 		var torch: Node2D = torch_scene.instantiate() as Node2D
 		torch.set("burn_dps", torch_burn_dps)
-		torch.global_position = point
+		torch.global_position = safe_point
 		add_child(torch)
+		_reserve_point(safe_point, 44.0)
 
 
 func _spawn_pickups() -> void:
 	for point in health_pickup_points:
+		var safe_point: Vector2 = _find_safe_position(point, 30.0)
+		if safe_point == Vector2.INF:
+			continue
 		var pickup: Node2D = pickup_scene.instantiate() as Node2D
 		pickup.call("configure_health", health_pickup_heal, health_pickup_max_bonus)
 		add_child(pickup)
-		pickup.global_position = point
+		pickup.global_position = safe_point
+		_reserve_point(safe_point, 42.0)
 
 
 func _spawn_player() -> void:
 	player = player_scene.instantiate() as Node2D
 	add_child(player)
-	player.global_position = player_spawn
+	player.global_position = _find_safe_position(player_spawn, 44.0, true)
+	if player.global_position == Vector2.INF:
+		player.global_position = player_spawn
+	_reserve_point(player.global_position, 72.0)
 	var camera: Camera2D = player.get_node_or_null("Camera2D") as Camera2D
 	if camera:
 		camera.limit_left = 0
@@ -223,23 +337,37 @@ func _spawn_player() -> void:
 func _spawn_boss() -> void:
 	boss = boss_scene.instantiate() as Node2D
 	add_child(boss)
-	boss.global_position = boss_spawn
+	boss.global_position = _find_safe_position(boss_spawn, 92.0, true)
+	if boss.global_position == Vector2.INF:
+		boss.global_position = boss_spawn
+	_reserve_point(boss.global_position, 108.0)
 	if boss.has_signal("defeated"):
 		boss.connect("defeated", Callable(self, "_on_boss_defeated"))
+	boss.set("room_min", Vector2(wall_thickness, wall_thickness))
+	boss.set("room_max", room_size - Vector2(wall_thickness, wall_thickness))
 
 
 func _spawn_enemy(point: Vector2) -> void:
+	var safe_point: Vector2 = _find_safe_position(point, 42.0, true)
+	if safe_point == Vector2.INF:
+		return
 	var enemy: Node2D = enemy_scene.instantiate() as Node2D
 	add_child(enemy)
-	enemy.global_position = point
+	enemy.global_position = safe_point
 	if enemy.has_signal("died"):
 		enemy.connect("died", Callable(self, "_on_enemy_died"))
 	live_enemies.append(enemy)
+	enemy.set_meta("spawn_reserved_point", safe_point)
+	_reserve_point(safe_point, 52.0)
 
 
 func _on_enemy_died(enemy: Node) -> void:
 	var enemy_node: Node2D = enemy as Node2D
 	var drop_position: Vector2 = enemy_node.global_position if enemy_node != null else player_spawn
+	if enemy.has_meta("spawn_reserved_point"):
+		var reserved_point: Variant = enemy.get_meta("spawn_reserved_point")
+		if reserved_point is Vector2:
+			_release_point(reserved_point as Vector2)
 	live_enemies.erase(enemy)
 	defeated_enemy_count += 1
 	regular_goblin_kill_count += 1
@@ -271,10 +399,14 @@ func _queue_enemy_respawn() -> void:
 
 func _spawn_bluntbow_pickup(point: Vector2) -> void:
 	bluntbow_dropped = true
+	var safe_point: Vector2 = _nearest_walkable_pickup_point(point)
+	if safe_point == Vector2.INF:
+		return
 	var pickup: Node2D = pickup_scene.instantiate() as Node2D
 	pickup.call("configure_weapon", &"crossbow")
 	add_child(pickup)
-	pickup.global_position = _nearest_walkable_pickup_point(point)
+	pickup.global_position = safe_point
+	_reserve_point(safe_point, 42.0)
 
 
 func _nearest_walkable_pickup_point(point: Vector2) -> Vector2:
@@ -287,25 +419,83 @@ func _nearest_walkable_pickup_point(point: Vector2) -> Vector2:
 	]
 	for offset in offsets:
 		var candidate: Vector2 = point + offset
-		if _point_is_walkable(candidate):
+		if _point_is_walkable(candidate, 30.0) and not _position_is_reserved(candidate, 38.0):
 			return candidate
-	return point
+	return _find_safe_position(point, 30.0)
 
 
-func _point_is_walkable(point: Vector2) -> bool:
-	if point.x < wall_thickness or point.x > room_size.x - wall_thickness:
+func _point_is_walkable(point: Vector2, clearance := 0.0) -> bool:
+	if point.x < wall_thickness + clearance or point.x > room_size.x - wall_thickness - clearance:
 		return false
-	if point.y < wall_thickness or point.y > room_size.y - wall_thickness:
+	if point.y < wall_thickness + clearance or point.y > room_size.y - wall_thickness - clearance:
 		return false
 	for obstacle in obstacle_rects:
-		if obstacle.grow(32.0).has_point(point):
+		if obstacle.grow(32.0 + clearance).has_point(point):
 			return false
-	for index in range(obstacle_positions.size()):
-		var rect: Rect2 = Rect2(obstacle_positions[index] - obstacle_collision_sizes[index] * 0.5, obstacle_collision_sizes[index])
-		rect.position += _obstacle_collision_offset(index)
-		if rect.grow(32.0).has_point(point):
+	for index in placed_obstacle_indices:
+		if _obstacle_collision_rect(index).grow(32.0 + clearance).has_point(point):
 			return false
 	return true
+
+
+func _find_safe_position(preferred_point: Vector2, radius: float, allow_protected_spawn := false) -> Vector2:
+	if _placement_is_safe(preferred_point, radius, allow_protected_spawn):
+		return preferred_point
+
+	var offsets: Array[Vector2] = [
+		Vector2(72, 0),
+		Vector2(-72, 0),
+		Vector2(0, 72),
+		Vector2(0, -72),
+		Vector2(96, 72),
+		Vector2(-96, 72),
+		Vector2(96, -72),
+		Vector2(-96, -72),
+		Vector2(144, 0),
+		Vector2(-144, 0),
+	]
+	var retry_total: int = mini(placement_retry_count, offsets.size())
+	for index in range(retry_total):
+		var candidate: Vector2 = preferred_point + offsets[index]
+		if _placement_is_safe(candidate, radius, allow_protected_spawn):
+			return candidate
+	return Vector2.INF
+
+
+func _placement_is_safe(point: Vector2, radius: float, allow_protected_spawn := false) -> bool:
+	if not _point_is_walkable(point, radius):
+		return false
+	if not allow_protected_spawn and _near_protected_spawn(point, radius):
+		return false
+	return not _position_is_reserved(point, radius)
+
+
+func _reserve_point(point: Vector2, radius: float) -> void:
+	reserved_points.append(point)
+	reserved_radii.append(radius)
+
+
+func _release_point(point: Vector2) -> void:
+	for index in range(reserved_points.size() - 1, -1, -1):
+		if reserved_points[index].is_equal_approx(point):
+			reserved_points.remove_at(index)
+			reserved_radii.remove_at(index)
+			return
+
+
+func _position_is_reserved(point: Vector2, radius: float) -> bool:
+	for index in range(reserved_points.size()):
+		var reserved_radius: float = reserved_radii[index] if index < reserved_radii.size() else 0.0
+		if point.distance_to(reserved_points[index]) < radius + reserved_radius:
+			return true
+	return false
+
+
+func _near_protected_spawn(point: Vector2, radius: float) -> bool:
+	for spawn_point in _protected_spawn_points():
+		if point.distance_to(spawn_point) < radius + 48.0:
+			return true
+	return false
 
 
 func _best_spawn_point() -> Vector2:

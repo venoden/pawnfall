@@ -37,6 +37,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func reset_run() -> void:
 	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	paused_by_menu = false
 	run_finished = false
 	hud.call("show_gameplay")
@@ -79,6 +80,7 @@ func _on_player_died(source: StringName = &"") -> void:
 		return
 	run_finished = true
 	paused_by_menu = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().paused = true
 	hud.call("show_defeat", source)
 
@@ -88,6 +90,7 @@ func _on_boss_defeated() -> void:
 		return
 	run_finished = true
 	paused_by_menu = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().paused = true
 	hud.call("show_victory")
 
@@ -95,12 +98,14 @@ func _on_boss_defeated() -> void:
 func _pause_gameplay() -> void:
 	paused_by_menu = true
 	_set_gameplay_branch_pausable()
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().paused = true
 	hud.call("show_pause")
 
 
 func _resume_gameplay() -> void:
 	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	paused_by_menu = false
 	hud.call("show_gameplay")
 
@@ -111,6 +116,7 @@ func _on_resume_requested() -> void:
 
 
 func _on_bye_requested() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().paused = false
 	get_tree().quit()
 
