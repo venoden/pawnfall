@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="PackedScene" path="res://levels/DungeonLevel.tscn" id="2_level"]
+[ext_resource type="PackedScene" path="res://ui/HUD.tscn" id="3_hud"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_game")
+level_scene = ExtResource("2_level")
+
+[node name="DungeonLevel" parent="." instance=ExtResource("2_level")]
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+

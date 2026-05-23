@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://levels/ward.gd" id="1_ward_script"]
+[ext_resource type="Texture2D" path="res://sprites/skull_beard.svg" id="2_skull"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ward"]
+radius = 126.0
+
+[node name="Ward" type="Area2D" groups=["hostile_blockers"]]
+script = ExtResource("1_ward_script")
+
+[node name="SkullBeard" type="Sprite2D" parent="."]
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("2_skull")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_ward")

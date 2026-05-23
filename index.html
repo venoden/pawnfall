@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dungeon Crawl</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <canvas id="game" aria-label="Top-down dungeon crawler"></canvas>
+      <section class="hud" aria-label="Game status">
+        <div class="meter player-meter">
+          <span class="meter-label">HP</span>
+          <span class="meter-track">
+            <span id="playerHealth" class="meter-fill"></span>
+            <span id="playerHealthText" class="meter-value">100/100</span>
+          </span>
+        </div>
+        <div class="meter boss-meter">
+          <span class="meter-label">Boss</span>
+          <span class="meter-track">
+            <span id="bossHealth" class="meter-fill"></span>
+            <span id="bossHealthText" class="meter-value">360/360</span>
+          </span>
+        </div>
+        <div class="weapon-chip" aria-label="Equipped weapon">
+          <span class="weapon-mark"></span>
+          <span id="weaponName">Dildo</span>
+        </div>
+        <div class="counter" aria-label="Enemy count">
+          <span class="counter-dot"></span>
+          <span id="enemyCount">5</span>
+        </div>
+      </section>
+      <div id="touchControls" class="touch-controls" aria-hidden="true">
+        <div id="touchStick" class="touch-stick">
+          <span id="touchKnob" class="touch-knob"></span>
+        </div>
+        <button id="attackButton" class="attack-button" type="button" aria-label="Attack"></button>
+      </div>
+      <div id="endActions" class="end-actions" hidden>
+        <button id="againButton" class="end-button" type="button">AGAIN!</button>
+        <button id="byeButton" class="end-button" type="button">bye</button>
+        <button id="restartButton" class="end-button" type="button">Restart</button>
+      </div>
+    </main>
+    <script src="game.js"></script>
+  </body>
+</html>

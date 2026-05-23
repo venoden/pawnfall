@@ -1,0 +1,355 @@
+:root {
+  color-scheme: dark;
+  --stone: #181a1c;
+  --stone-2: #23272a;
+  --gold: #d6b25e;
+  --ember: #d85e44;
+  --blood: #b7354c;
+  --moss: #5e8c5a;
+  --blue: #668fc4;
+  --ink: #0d1014;
+  --paper: #f3e8ca;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.game-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-width: 280px;
+  background: var(--ink);
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(118px, 190px) minmax(140px, 260px) 84px 58px;
+  gap: 10px;
+  align-items: center;
+  width: min(94vw, 660px);
+  padding: 8px;
+  border: 1px solid rgba(214, 178, 94, 0.28);
+  border-radius: 8px;
+  background: rgba(13, 16, 20, 0.74);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(8px);
+  transform: translateX(-50%);
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.meter-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #ead7a8;
+  white-space: nowrap;
+}
+
+.meter-track {
+  position: relative;
+  display: block;
+  height: 18px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(243, 232, 202, 0.28);
+  border-radius: 999px;
+  background: rgba(243, 232, 202, 0.1);
+}
+
+.meter-value {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #f8efd7;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow:
+    0 1px 2px rgba(13, 16, 20, 0.95),
+    0 0 6px rgba(13, 16, 20, 0.75);
+}
+
+.meter-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6db36a, #d6b25e);
+  transition: width 120ms linear;
+}
+
+.boss-meter .meter-fill {
+  background: linear-gradient(90deg, #b7354c, #d85e44);
+}
+
+.weapon-chip,
+.counter {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(243, 232, 202, 0.2);
+  border-radius: 8px;
+  background: rgba(243, 232, 202, 0.08);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.weapon-chip {
+  grid-template-columns: 16px 1fr;
+  padding: 0 9px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.weapon-mark {
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+
+.weapon-mark::before,
+.weapon-mark::after {
+  position: absolute;
+  left: 7px;
+  width: 3px;
+  border-radius: 4px;
+  content: "";
+  transform-origin: center;
+}
+
+.weapon-mark::before {
+  top: 0;
+  height: 16px;
+  background: #d77aa3;
+  transform: rotate(28deg);
+}
+
+.weapon-mark::after {
+  top: 11px;
+  left: 4px;
+  width: 9px;
+  height: 3px;
+  background: #f0b4ca;
+  transform: rotate(28deg);
+}
+
+.counter-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 14px rgba(94, 140, 90, 0.8);
+}
+
+.touch-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 2;
+  display: none;
+  align-items: end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.touch-stick,
+.attack-button {
+  pointer-events: auto;
+  border: 1px solid rgba(243, 232, 202, 0.24);
+  background: rgba(13, 16, 20, 0.58);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.touch-stick {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+}
+
+.touch-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: inset 0 -8px 12px rgba(0, 0, 0, 0.18);
+  transform: translate(-50%, -50%);
+}
+
+.attack-button {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+}
+
+.attack-button::before {
+  position: absolute;
+  top: 20px;
+  left: 36px;
+  width: 10px;
+  height: 42px;
+  border-radius: 999px;
+  background: #d77aa3;
+  box-shadow: 0 0 14px rgba(215, 122, 163, 0.7);
+  content: "";
+  transform: rotate(28deg);
+  transform-origin: center;
+}
+
+.attack-button::after {
+  position: absolute;
+  top: 53px;
+  left: 29px;
+  width: 27px;
+  height: 10px;
+  border-radius: 999px;
+  background: #f0b4ca;
+  content: "";
+  transform: rotate(28deg);
+}
+
+.end-actions {
+  position: absolute;
+  top: calc(50% + 28px);
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: min(92vw, 360px);
+  transform: translateX(-50%);
+}
+
+.end-actions[hidden] {
+  display: none;
+}
+
+.end-button {
+  min-width: 96px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(243, 232, 202, 0.34);
+  border-radius: 8px;
+  background: rgba(13, 16, 20, 0.84);
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
+}
+
+.end-button[hidden] {
+  display: none;
+}
+
+.end-button:hover {
+  border-color: rgba(214, 178, 94, 0.74);
+  background: rgba(35, 39, 42, 0.92);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .touch-controls {
+    display: flex;
+  }
+}
+
+@media (max-width: 620px) {
+  .hud {
+    grid-template-columns: 1fr 1fr 62px 48px;
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .meter {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .meter-label {
+    font-size: 0.64rem;
+  }
+
+  .meter-track {
+    height: 18px;
+  }
+
+  .meter-value {
+    font-size: 0.58rem;
+  }
+
+  .counter {
+    height: 34px;
+    padding: 0 8px;
+  }
+
+  .weapon-chip {
+    height: 34px;
+    padding: 0 7px;
+    font-size: 0.54rem;
+  }
+
+  .end-actions {
+    gap: 8px;
+  }
+
+  .end-button {
+    min-width: 82px;
+    padding: 0 12px;
+    font-size: 0.78rem;
+  }
+}
