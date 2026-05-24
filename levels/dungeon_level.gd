@@ -8,6 +8,7 @@ signal enemy_defeated_count_changed(count: int)
 @export var boss_scene: PackedScene = preload("res://enemies/Boss.tscn")
 @export var pickup_scene: PackedScene = preload("res://scenes/Pickup.tscn")
 @export var torch_scene: PackedScene = preload("res://levels/Torch.tscn")
+@export var chest_scene: PackedScene = preload("res://levels/Chest.tscn")
 
 @export_category("Room")
 @export var background_texture: Texture2D = preload("res://sprites/dungeon_bg_lg.png")
@@ -66,6 +67,8 @@ signal enemy_defeated_count_changed(count: int)
 ]
 @export var health_pickup_heal := 15.0
 @export var health_pickup_max_bonus := 15.0
+@export var chest_point := Vector2(724, 890)
+@export var chest_unlock_kill_count := 10
 
 @export_category("Hazards")
 @export var torch_burn_dps := 3.0
@@ -78,15 +81,15 @@ signal enemy_defeated_count_changed(count: int)
 	Vector2(1264, 898),
 ]
 @export var enemy_respawn_delay := 5.0
-@export var bluntbow_drop_kill_count := 5
 @export var placement_retry_count := 10
 
 var player: Node2D
 var boss: Node2D
+var chest: Node2D
 var live_enemies: Array[Node] = []
 var defeated_enemy_count := 0
 var regular_goblin_kill_count := 0
-var bluntbow_dropped := false
+var chest_unlocked := false
 var boss_defeated := false
 var obstacle_variant_indices: Array[int] = []
 var placed_obstacle_indices: Array[int] = []
@@ -100,6 +103,7 @@ func _ready() -> void:
 	reserved_radii.clear()
 	_create_collision()
 	_spawn_obstacles()
+	_spawn_chest()
 	_spawn_hazards()
 	_spawn_pickups()
 	_spawn_player()
@@ -292,7 +296,19 @@ func _obstacle_protected_points() -> Array[Vector2]:
 	var points: Array[Vector2] = _protected_spawn_points()
 	points.append_array(health_pickup_points)
 	points.append_array(torch_points)
+	points.append(chest_point)
 	return points
+
+
+func _spawn_chest() -> void:
+	chest = chest_scene.instantiate() as Node2D
+	if chest == null:
+		return
+	add_child(chest)
+	chest.global_position = _find_safe_position(chest_point, 58.0)
+	if chest.global_position == Vector2.INF:
+		chest.global_position = chest_point
+	_reserve_point(chest.global_position, 78.0)
 
 
 func _spawn_hazards() -> void:
@@ -362,8 +378,6 @@ func _spawn_enemy(point: Vector2) -> void:
 
 
 func _on_enemy_died(enemy: Node) -> void:
-	var enemy_node: Node2D = enemy as Node2D
-	var drop_position: Vector2 = enemy_node.global_position if enemy_node != null else player_spawn
 	if enemy.has_meta("spawn_reserved_point"):
 		var reserved_point: Variant = enemy.get_meta("spawn_reserved_point")
 		if reserved_point is Vector2:
@@ -371,8 +385,8 @@ func _on_enemy_died(enemy: Node) -> void:
 	live_enemies.erase(enemy)
 	defeated_enemy_count += 1
 	regular_goblin_kill_count += 1
-	if regular_goblin_kill_count == bluntbow_drop_kill_count and not bluntbow_dropped:
-		_spawn_bluntbow_pickup(drop_position)
+	if regular_goblin_kill_count >= chest_unlock_kill_count and not chest_unlocked:
+		_unlock_chest()
 	if not boss_defeated and _current_enemy_count() < enemy_count:
 		_queue_enemy_respawn()
 	enemy_defeated_count_changed.emit(defeated_enemy_count)
@@ -397,31 +411,10 @@ func _queue_enemy_respawn() -> void:
 		_spawn_enemy(_best_spawn_point())
 
 
-func _spawn_bluntbow_pickup(point: Vector2) -> void:
-	bluntbow_dropped = true
-	var safe_point: Vector2 = _nearest_walkable_pickup_point(point)
-	if safe_point == Vector2.INF:
-		return
-	var pickup: Node2D = pickup_scene.instantiate() as Node2D
-	pickup.call("configure_weapon", &"crossbow")
-	add_child(pickup)
-	pickup.global_position = safe_point
-	_reserve_point(safe_point, 42.0)
-
-
-func _nearest_walkable_pickup_point(point: Vector2) -> Vector2:
-	var offsets: Array[Vector2] = [
-		Vector2(42, 0),
-		Vector2(-42, 0),
-		Vector2(0, 42),
-		Vector2(0, -42),
-		Vector2(52, 52),
-	]
-	for offset in offsets:
-		var candidate: Vector2 = point + offset
-		if _point_is_walkable(candidate, 30.0) and not _position_is_reserved(candidate, 38.0):
-			return candidate
-	return _find_safe_position(point, 30.0)
+func _unlock_chest() -> void:
+	chest_unlocked = true
+	if is_instance_valid(chest) and chest.has_method("unlock"):
+		chest.call("unlock")
 
 
 func _point_is_walkable(point: Vector2, clearance := 0.0) -> bool:

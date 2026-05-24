@@ -1,7 +1,1 @@
 res://levels/dungeon_level.gd
-res://player/player.gd
-res://player/Player.tscn
-res://player/AttackSweep.tscn
-res://player/attack_sweep.gd
-res://enemies/Boss.tscn
-res://enemies/Enemy.tscn
