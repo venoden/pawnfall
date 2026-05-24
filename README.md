@@ -2,102 +2,89 @@
 
 **Pawnfall** is a small 2D dungeon crawler prototype built in Godot.
 
-You play as the Pawn, a tiny hooded dungeon crawler fighting goblins, surviving waves, and slowly pushing deeper into the dungeon.
+You play as the Pawn, a tiny hooded dungeon crawler fighting goblins, surviving waves, unlocking dungeon rewards, and slowly pushing deeper into the dungeon.
 
-This project is currently in early alpha and is being developed in small playable releases.
+This project is currently in early internal alpha and is being developed in small playable milestones.
 
 ## Current Version
 
-**v0.0.0-alpha.2**
+**v0.0.0-alpha.3**
 
 ## Current Gameplay
 
+- Start from a dedicated main menu
 - Move around a top-down dungeon room
 - Fight goblin enemies
 - Defeat the Gobboss
 - Use the current weapon system
 - Pick up health items
-- Reach victory after defeating the boss
 - Pause gameplay with a pause/menu overlay
-- Experience defeat and victory screens with gameplay properly frozen
+- Experience defeat and victory screens
+- Defeat goblins to progress toward dungeon rewards
+- Collect a key after enough goblins are defeated
+- Use the key to unlock a chest
+- Reveal and collect the Bluntbow from the opened chest
 
-## Alpha.2 Update
+## v0.0.0-alpha.3 Focus
 
-Alpha.2 focuses on improving the core room and gameplay feel.
+This alpha update focuses on adding the first real menu structure and improving dungeon progression.
 
-### Added / Improved
+### Added
 
-- Expanded the main dungeon room for more playable space
-- Adjusted the camera zoom to better fit the larger room
-- Fixed mouse cursor visibility during pause/menu overlays
-- Improved button interaction while paused or in menu states
-- Improved pause, defeat, and victory overlay behavior
-- Ensured gameplay properly freezes during pause, defeat, and victory states
-- Improved Gobboss movement behavior after the larger room update
-- Preserved sprite scale relationships between the Pawn, goblins, and Gobboss
+- Main menu scene
+- Main menu UI assets
+- Play/menu entry flow
+- Chest-based reward progression
+- Key pickup flow for unlocking the chest
+- Bluntbow pickup reveal after opening the chest
 
-### Temporary Changes
+### Improved / Cleaned Up
 
-- Removed current obstacle placement from alpha.2
-- Obstacle layout and new obstacle sprites are deferred to alpha.3
-- This avoids shipping known spacing/cropping issues from the current obstacle sprite sheet
+- Updated the project toward a clearer internal alpha milestone structure
+- Preserved the chest/key unlock work while merging the main menu branch
+- Removed generated Godot `.godot` editor/cache files from version control
+- Continued testing around combat, pickups, pause behavior, victory, and defeat states
 
-### Known Visual Issue
+## Alpha Status
 
-- The Pawn still does not clearly appear to hold the mace during gameplay
-- The mace works mechanically, but the visual attachment/anchor needs improvement
-- This has been moved into a dedicated follow-up issue for a focused fix
+Pawnfall is currently in internal alpha.
 
-## Repository Notes
+Alpha builds are used for development, testing, balance changes, visual updates, and core gameplay experiments.
 
-- Added a root `.gitignore` for Godot project cleanup
-- Local Godot cache files, build/export folders, editor files, OS junk, and environment files should be kept out of version control
-- The current stable alpha.2 work should remain on `main`
-- Focused fixes can be handled on separate branches before merging back into `main`
+There is no public downloadable release yet.
 
-## Planned Alpha.3 Focus
+## Planned Development Roadmap
 
-Alpha.3 is expected to focus on presentation, sprites, and structure improvements.
+Pawnfall is planned to move through:
 
-Planned direction:
+- 5 internal alpha builds
+- 3 beta builds
+- full release
 
-- Main menu implementation
-- Updated sprite assets
-- Cleaner obstacle sprites and placement
-- Better title/menu flow
-- Dedicated fix for the Pawn/mace visual anchor issue
-- Possible early room progression planning
+The first public downloadable build is planned for the beta stage.
 
-## Future Progression Idea
+## Current Testing Priorities
 
-A possible future update may cover the staircase with a wooden trapdoor.
-
-Planned concept:
-
-- The trapdoor stays closed during combat
-- The player must defeat at least 8 goblins and the Gobboss
-- After those conditions are met, the trapdoor opens
-- The player can walk down through the opened trapdoor
-- Entering the trapdoor can transition or teleport the player to a new room
-
-This is a future progression idea and is not part of alpha.2.
-
-## Version Roadmap
-
-Planned release path:
-
-- v0.0.0-alpha.1
-- v0.0.0-alpha.2
-- v0.0.0-alpha.3
-- v0.0.0-alpha.4
-- v0.0.0-alpha.5
-- v0.0.0-beta.1
-- v0.0.0-beta.2
-- v0.0.0-beta.3
-- v1.0.0
+- Confirm the main menu works correctly
+- Confirm Play starts the dungeon properly
+- Confirm pause freezes gameplay correctly
+- Confirm defeat and victory screens behave correctly
+- Confirm goblins and Gobboss still deal damage properly
+- Confirm health pickups function correctly
+- Confirm the key drops after the intended goblin progression
+- Confirm the chest unlocks only after the key is collected
+- Confirm the Bluntbow appears after the chest opens
+- Confirm no required sprites, scenes, or scripts are missing
 
 ## Development Notes
 
-This is an early prototype. Systems, sprites, room layouts, menus, balance, and progression are all expected to change as the project develops.
+Pawnfall is being developed with small focused updates.
 
-The current goal is to build the game in small stable chunks instead of adding too many unfinished systems at once.
+The current goal is to keep each alpha milestone playable, testable, and easy to understand before adding larger systems.
+
+Generated Godot editor/cache files should not be tracked in version control.
+
+## Built With
+
+- Godot Engine
+- GitHub / GitHub Desktop
