@@ -1,0 +1,65 @@
+# Godot 4 project files generated locally
+.godot/
+.import/
+
+# Godot export/build outputs
+export/
+exports/
+build/
+builds/
+dist/
+release/
+releases/
+
+# Godot imported resource cache
+*.import
+
+# Temporary Godot/editor files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Logs
+*.log
+logs/
+
+# Windows junk
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS junk, in case files ever move across systems
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux junk
+*~
+
+# VS Code local settings
+.vscode/
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# JetBrains IDE files
+.idea/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python cache, just in case helper scripts get added later
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Godot Mono / C# generated files, safe even if unused
+.mono/
+data_*/
+*.csproj
+*.sln
