@@ -37,8 +37,8 @@ func _draw() -> void:
 	var outer_radius: float = _variant_outer_radius() * grow
 	var inner_radius: float = _variant_inner_radius() * grow
 
-	_draw_rounded_arc(outer_radius, 12.0, _with_alpha(outer_color, fade), start_angle, sweep_angle)
-	_draw_rounded_arc(inner_radius, 8.0, _with_alpha(inner_color, fade * 0.92), start_angle + 0.08, sweep_angle * 0.86)
+	_draw_rounded_arc(outer_radius, 8.0, _with_alpha(outer_color, fade), start_angle, sweep_angle)
+	_draw_rounded_arc(inner_radius, 5.0, _with_alpha(inner_color, fade * 0.92), start_angle + 0.08, sweep_angle * 0.86)
 
 
 func _draw_rounded_arc(radius: float, width: float, color: Color, start_angle: float, sweep_angle: float) -> void:
@@ -86,29 +86,29 @@ func _variant_sweep_angle() -> float:
 func _variant_outer_radius() -> float:
 	match variant_index:
 		1:
-			return 78.0
+			return 54.0
 		2:
-			return 88.0
+			return 60.0
 		3:
-			return 82.0
+			return 56.0
 		4:
-			return 92.0
+			return 62.0
 		_:
-			return 84.0
+			return 58.0
 
 
 func _variant_inner_radius() -> float:
 	match variant_index:
 		1:
-			return 52.0
+			return 34.0
 		2:
-			return 58.0
+			return 38.0
 		3:
-			return 50.0
+			return 33.0
 		4:
-			return 62.0
+			return 40.0
 		_:
-			return 56.0
+			return 36.0
 
 
 func _with_alpha(color: Color, alpha_multiplier: float) -> Color:

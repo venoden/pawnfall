@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1_player_script"]
-[ext_resource type="Texture2D" path="res://sprites/main_3_pawn.png" id="2_player_sprite"]
+[ext_resource type="Texture2D" path="res://sprites/main_pawn.png" id="2_player_sprite"]
 [ext_resource type="Texture2D" path="res://sprites/leg.svg" id="3_leg_sprite"]
 [ext_resource type="Texture2D" path="res://sprites/mace.png" id="4_starter_weapon"]
 
@@ -25,16 +25,19 @@ texture = ExtResource("3_leg_sprite")
 
 [node name="Body" type="Sprite2D" parent="Visual"]
 rotation = 3.14159
-scale = Vector2(0.4, 0.4)
+scale = Vector2(0.1, 0.1)
 texture = ExtResource("2_player_sprite")
 
-[node name="WeaponSprite" type="Sprite2D" parent="Visual"]
+[node name="HandSocket" type="Node2D" parent="Visual"]
 z_index = 2
-position = Vector2(31, 7)
-rotation = -0.55
-scale = Vector2(0.36, 0.36)
-region_enabled = true
-region_rect = Rect2(638, 370, 272, 238)
+position = Vector2(34, 22)
+
+[node name="WeaponSprite" type="Sprite2D" parent="Visual/HandSocket"]
+z_index = 2
+position = Vector2(0, -12)
+rotation = -0.95
+scale = Vector2(0.306, 0.306)
+offset = Vector2(62, -66)
 texture = ExtResource("4_starter_weapon")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

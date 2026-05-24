@@ -19,7 +19,7 @@ signal died(source: StringName)
 @export var starter_weapon_id: StringName = &"mace"
 @export var mace_weapon_id: StringName = &"mace"
 @export var starter_damage := 34.0
-@export var starter_range := 112.0
+@export var starter_range := 128.0
 @export var starter_spread_radians := 0.95
 @export var starter_cooldown := 0.35
 @export var starter_sweep_scene: PackedScene = preload("res://player/AttackSweep.tscn")
@@ -39,13 +39,16 @@ signal died(source: StringName)
 @onready var visual: Node2D = $Visual
 @onready var leg_left: Sprite2D = $Visual/LegLeft
 @onready var leg_right: Sprite2D = $Visual/LegRight
-@onready var weapon_sprite: Sprite2D = $Visual/WeaponSprite
+@onready var hand_socket: Node2D = $Visual/HandSocket
+@onready var weapon_sprite: Sprite2D = $Visual/HandSocket/WeaponSprite
 
 const MACE_TEXTURE := preload("res://sprites/mace.png")
 const BLUNTBOW_TEXTURE := preload("res://sprites/bluntbow.png")
 const MACE_REGION := Rect2(638, 370, 272, 238)
 const BLUNTBOW_REGION := Rect2(170, 330, 590, 360)
 const STARTER_SWEEP_VARIANT_COUNT := 5
+const MACE_ATTACK_ORIGIN_OFFSET := 36.0
+const MACE_ATTACK_RADIUS_SCALE := 0.82
 
 var current_health := 100.0
 var weapon_id: StringName
@@ -106,12 +109,16 @@ func apply_health_pickup(heal_amount: float, max_health_bonus: float) -> void:
 
 func set_weapon(new_weapon_id: StringName) -> void:
 	weapon_id = new_weapon_id
+	weapon_sprite.region_enabled = false
+	weapon_sprite.visible = true
 	if weapon_id == crossbow_weapon_id:
 		weapon_sprite.texture = _atlas_texture(BLUNTBOW_TEXTURE, BLUNTBOW_REGION)
 		weapon_sprite.scale = Vector2(0.16, 0.16)
+		weapon_sprite.offset = Vector2(150.0, 0.0)
 	else:
 		weapon_sprite.texture = _atlas_texture(MACE_TEXTURE, MACE_REGION)
-		weapon_sprite.scale = Vector2(0.36, 0.36)
+		weapon_sprite.scale = Vector2(0.306, 0.306)
+		weapon_sprite.offset = Vector2(62.0, -66.0)
 	weapon_changed.emit(weapon_id)
 
 
@@ -166,14 +173,17 @@ func _melee_attack() -> void:
 	mace_swing_visual_timer = starter_cooldown
 	mace_swing_visual_side = swing_side
 	var attack_direction: Vector2 = facing.rotated(float(swing_side) * 0.38)
-	_spawn_starter_sweep(attack_direction, swing_side)
+	var attack_origin: Vector2 = _mace_attack_origin(attack_direction)
+	var attack_radius: float = starter_range * MACE_ATTACK_RADIUS_SCALE
+	_spawn_starter_sweep(attack_direction, swing_side, attack_origin)
 	for target in get_tree().get_nodes_in_group("hostiles"):
 		if not is_instance_valid(target) or not (target is Node2D) or not target.has_method("take_damage"):
 			continue
 		var target_node: Node2D = target as Node2D
-		var to_target: Vector2 = target_node.global_position - global_position
-		if to_target.length() > starter_range:
+		var to_target_from_origin: Vector2 = target_node.global_position - attack_origin
+		if to_target_from_origin.length() > attack_radius:
 			continue
+		var to_target: Vector2 = target_node.global_position - global_position
 		if absf(attack_direction.angle_to(to_target.normalized())) > starter_spread_radians:
 			continue
 		if not _has_line_of_sight_to(target_node):
@@ -183,7 +193,7 @@ func _melee_attack() -> void:
 			target_node.call("apply_mace_hit_reaction", attack_direction, 48.0)
 
 
-func _spawn_starter_sweep(attack_direction: Vector2, swing_side: int) -> void:
+func _spawn_starter_sweep(attack_direction: Vector2, swing_side: int, attack_origin: Vector2) -> void:
 	if starter_sweep_scene == null:
 		return
 	var sweep: AttackSweep = starter_sweep_scene.instantiate() as AttackSweep
@@ -191,9 +201,16 @@ func _spawn_starter_sweep(attack_direction: Vector2, swing_side: int) -> void:
 		return
 	sweep.process_mode = Node.PROCESS_MODE_PAUSABLE
 	get_tree().current_scene.add_child(sweep)
-	sweep.global_position = global_position
+	sweep.global_position = attack_origin
 	sweep.setup(attack_direction, starter_sweep_variant, swing_side)
 	starter_sweep_variant = (starter_sweep_variant + 1) % STARTER_SWEEP_VARIANT_COUNT
+
+
+func _mace_attack_origin(attack_direction: Vector2) -> Vector2:
+	var normalized_direction: Vector2 = attack_direction.normalized()
+	if normalized_direction.length_squared() <= 0.001:
+		normalized_direction = facing
+	return hand_socket.global_position + normalized_direction * MACE_ATTACK_ORIGIN_OFFSET
 
 
 func _fire_crossbow() -> void:
@@ -276,15 +293,19 @@ func _update_visuals(delta: float) -> void:
 		bob = sin(walk_timer * 1.1) * 2.8
 
 	if weapon_id == crossbow_weapon_id:
-		weapon_sprite.position = Vector2(28.0, bob * 0.35)
+		hand_socket.position = Vector2(34.0, 22.0 + bob * 0.25)
+		hand_socket.rotation = flop * 0.08
+		weapon_sprite.position = Vector2(0.0, -10.0)
 		weapon_sprite.rotation = -PI / 2.0 + flop * 0.18
 	else:
 		var swing_amount := 0.0
 		if mace_swing_visual_timer > 0.0:
 			var swing_progress: float = 1.0 - mace_swing_visual_timer / starter_cooldown
 			swing_amount = sin(clampf(swing_progress, 0.0, 1.0) * PI) * float(mace_swing_visual_side)
-		weapon_sprite.position = Vector2(24.0, 12.0 + bob + swing_amount * 4.0)
-		weapon_sprite.rotation = -0.82 + flop * 0.42 + swing_amount * 0.64
+		hand_socket.position = Vector2(34.0, 22.0 + bob * 0.25)
+		hand_socket.rotation = flop * 0.16 + swing_amount * 0.92
+		weapon_sprite.position = Vector2(0.0, -12.0)
+		weapon_sprite.rotation = -0.95
 
 
 func _turn_blend(delta: float) -> float:
