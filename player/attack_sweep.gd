@@ -86,29 +86,29 @@ func _variant_sweep_angle() -> float:
 func _variant_outer_radius() -> float:
 	match variant_index:
 		1:
-			return 54.0
+			return 59.4
 		2:
-			return 60.0
+			return 66.0
 		3:
-			return 56.0
+			return 61.6
 		4:
-			return 62.0
+			return 68.2
 		_:
-			return 58.0
+			return 63.8
 
 
 func _variant_inner_radius() -> float:
 	match variant_index:
 		1:
-			return 34.0
+			return 37.4
 		2:
-			return 38.0
+			return 41.8
 		3:
-			return 33.0
+			return 36.3
 		4:
-			return 40.0
+			return 44.0
 		_:
-			return 36.0
+			return 39.6
 
 
 func _with_alpha(color: Color, alpha_multiplier: float) -> Color:
