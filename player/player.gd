@@ -19,7 +19,7 @@ signal died(source: StringName)
 @export var starter_weapon_id: StringName = &"mace"
 @export var mace_weapon_id: StringName = &"mace"
 @export var starter_damage := 34.0
-@export var starter_range := 128.0
+@export var starter_range := 140.8
 @export var starter_spread_radians := 0.95
 @export var starter_cooldown := 0.35
 @export var starter_sweep_scene: PackedScene = preload("res://player/AttackSweep.tscn")

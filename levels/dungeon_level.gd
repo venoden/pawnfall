@@ -9,6 +9,7 @@ signal enemy_defeated_count_changed(count: int)
 @export var pickup_scene: PackedScene = preload("res://scenes/Pickup.tscn")
 @export var torch_scene: PackedScene = preload("res://levels/Torch.tscn")
 @export var chest_scene: PackedScene = preload("res://levels/Chest.tscn")
+@export var key_pickup_scene: PackedScene = preload("res://levels/KeyPickup.tscn")
 
 @export_category("Room")
 @export var background_texture: Texture2D = preload("res://sprites/dungeon_bg_lg.png")
@@ -86,10 +87,14 @@ signal enemy_defeated_count_changed(count: int)
 var player: Node2D
 var boss: Node2D
 var chest: Node2D
+var key_pickup: Node2D
 var live_enemies: Array[Node] = []
 var defeated_enemy_count := 0
 var regular_goblin_kill_count := 0
+var key_spawned := false
+var has_key := false
 var chest_unlocked := false
+var bluntbow_acquired := false
 var boss_defeated := false
 var obstacle_variant_indices: Array[int] = []
 var placed_obstacle_indices: Array[int] = []
@@ -309,6 +314,10 @@ func _spawn_chest() -> void:
 	if chest.global_position == Vector2.INF:
 		chest.global_position = chest_point
 	_reserve_point(chest.global_position, 78.0)
+	if chest.has_signal("unlock_requested"):
+		chest.connect("unlock_requested", Callable(self, "_on_chest_unlock_requested"))
+	if chest.has_signal("bluntbow_collected"):
+		chest.connect("bluntbow_collected", Callable(self, "_on_bluntbow_acquired"))
 
 
 func _spawn_hazards() -> void:
@@ -378,6 +387,8 @@ func _spawn_enemy(point: Vector2) -> void:
 
 
 func _on_enemy_died(enemy: Node) -> void:
+	var enemy_node: Node2D = enemy as Node2D
+	var drop_position: Vector2 = enemy_node.global_position if enemy_node != null else player_spawn
 	if enemy.has_meta("spawn_reserved_point"):
 		var reserved_point: Variant = enemy.get_meta("spawn_reserved_point")
 		if reserved_point is Vector2:
@@ -385,8 +396,8 @@ func _on_enemy_died(enemy: Node) -> void:
 	live_enemies.erase(enemy)
 	defeated_enemy_count += 1
 	regular_goblin_kill_count += 1
-	if regular_goblin_kill_count >= chest_unlock_kill_count and not chest_unlocked:
-		_unlock_chest()
+	if regular_goblin_kill_count >= chest_unlock_kill_count and not key_spawned:
+		_spawn_key_pickup(drop_position)
 	if not boss_defeated and _current_enemy_count() < enemy_count:
 		_queue_enemy_respawn()
 	enemy_defeated_count_changed.emit(defeated_enemy_count)
@@ -411,10 +422,59 @@ func _queue_enemy_respawn() -> void:
 		_spawn_enemy(_best_spawn_point())
 
 
+func _spawn_key_pickup(point: Vector2) -> void:
+	key_spawned = true
+	key_pickup = key_pickup_scene.instantiate() as Node2D
+	if key_pickup == null:
+		return
+	var safe_point: Vector2 = _nearest_walkable_item_point(point, 24.0)
+	if safe_point == Vector2.INF:
+		return
+	add_child(key_pickup)
+	key_pickup.global_position = safe_point
+	if key_pickup.has_signal("picked_up"):
+		key_pickup.connect("picked_up", Callable(self, "_on_key_picked_up"))
+	_reserve_point(safe_point, 34.0)
+
+
+func _on_key_picked_up() -> void:
+	has_key = true
+	if is_instance_valid(key_pickup):
+		_release_point(key_pickup.global_position)
+
+
+func _on_chest_unlock_requested() -> void:
+	if has_key and not chest_unlocked:
+		_unlock_chest()
+
+
 func _unlock_chest() -> void:
 	chest_unlocked = true
 	if is_instance_valid(chest) and chest.has_method("unlock"):
 		chest.call("unlock")
+
+
+func _on_bluntbow_acquired() -> void:
+	bluntbow_acquired = true
+	if is_instance_valid(chest):
+		_release_point(chest.global_position)
+
+
+func _nearest_walkable_item_point(point: Vector2, radius: float) -> Vector2:
+	var offsets: Array[Vector2] = [
+		Vector2.ZERO,
+		Vector2(42, 0),
+		Vector2(-42, 0),
+		Vector2(0, 42),
+		Vector2(0, -42),
+		Vector2(52, 52),
+		Vector2(-52, 52),
+	]
+	for offset in offsets:
+		var candidate: Vector2 = point + offset
+		if _placement_is_safe(candidate, radius):
+			return candidate
+	return _find_safe_position(point, radius)
 
 
 func _point_is_walkable(point: Vector2, clearance := 0.0) -> bool:

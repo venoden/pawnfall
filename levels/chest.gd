@@ -1,6 +1,7 @@
 extends Area2D
 
 signal bluntbow_collected
+signal unlock_requested
 
 @export var closed_texture: Texture2D = preload("res://sprites/closed_chest.png")
 @export var open_texture: Texture2D = preload("res://sprites/open_chest.png")
@@ -44,15 +45,19 @@ func unlock() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if not unlocked or collected:
+	if collected:
 		return
 	if not body.is_in_group("player") or not body.has_method("set_weapon"):
+		return
+	if not unlocked:
+		unlock_requested.emit()
 		return
 
 	collected = true
 	bluntbow_pickup.visible = false
 	body.call("set_weapon", weapon_id)
 	bluntbow_collected.emit()
+	queue_free()
 
 
 func _atlas_texture(source_texture: Texture2D, region: Rect2) -> AtlasTexture:
