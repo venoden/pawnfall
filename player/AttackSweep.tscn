@@ -3,5 +3,5 @@
 [ext_resource type="Script" path="res://player/attack_sweep.gd" id="1_attack_sweep"]
 
 [node name="AttackSweep" type="Node2D"]
+z_index = 1
 script = ExtResource("1_attack_sweep")
-

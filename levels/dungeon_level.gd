@@ -18,7 +18,7 @@ signal enemy_defeated_count_changed(count: int)
 ]
 
 @export_category("Obstacles")
-@export var obstacle_texture: Texture2D = preload("res://sprites/5_dungeon.png")
+@export var obstacle_texture: Texture2D
 @export var obstacle_regions: Array[Rect2] = [
 	Rect2(96, 330, 190, 260),
 	Rect2(352, 350, 196, 238),
