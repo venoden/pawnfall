@@ -19,6 +19,7 @@ func _ready() -> void:
 	hud.connect("again_requested", Callable(self, "reset_run"))
 	hud.connect("restart_requested", Callable(self, "reset_run"))
 	hud.connect("bye_requested", Callable(self, "_on_bye_requested"))
+	hud.connect("menu_requested", Callable(self, "_on_menu_requested"))
 	hud.connect("resume_requested", Callable(self, "_on_resume_requested"))
 	await get_tree().process_frame
 	_wire_current_level()
@@ -119,6 +120,14 @@ func _on_bye_requested() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().paused = false
 	get_tree().quit()
+
+
+func _on_menu_requested() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	get_tree().paused = false
+	paused_by_menu = false
+	run_finished = false
+	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 
 
 func _set_gameplay_branch_pausable() -> void:

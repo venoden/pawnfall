@@ -2,6 +2,7 @@ extends CanvasLayer
 
 signal again_requested
 signal bye_requested
+signal menu_requested
 signal restart_requested
 signal resume_requested
 
@@ -12,20 +13,36 @@ var boss_value: Label
 var weapon_icon: TextureRect
 var enemy_value: Label
 var overlay: Control
+var overlay_menu_root: Control
 var overlay_title: Label
 var boss_kill_pose: TextureRect
 var victory_pose: TextureRect
-var again_button: Button
-var bye_button: Button
-var restart_button: Button
-var resume_button: Button
+var menu_button: TextureButton
+var settings_button: TextureButton
+var bye_button: TextureButton
 
 const BOSS_KILL_POSE_TEXTURE := preload("res://sprites/goblin_boss1.png")
 const VICTORY_POSE_TEXTURE := preload("res://sprites/celerbatory_pawn.png")
 const MACE_TEXTURE := preload("res://sprites/mace.png")
 const BLUNTBOW_TEXTURE := preload("res://sprites/bluntbow.png")
+const STONE_BUTTON_TEXTURE := preload("res://pawnfall/menu/stone_button.png")
+const STONE_BUTTON_EXIT_TEXTURE := preload("res://pawnfall/menu/stone_button_exit.png")
+const MENU_TEXT_TEXTURE := preload("res://pawnfall/menu/menu_button_text.png")
+const SETTINGS_TEXT_TEXTURE := preload("res://pawnfall/menu/settings_button_text.png")
+const EXIT_TEXT_TEXTURE := preload("res://pawnfall/menu/exit_button_text.png")
+
+const OVERLAY_MENU_SIZE := Vector2(1920.0, 1080.0)
+const OVERLAY_BUTTON_SIZE := Vector2(430.0, 146.0)
+const OVERLAY_BUTTON_TEXT_SCALE := 0.58995
+const OVERLAY_EXIT_TEXT_SCALE := 0.621
+const OVERLAY_BUTTON_GAP := 18.0
 const MACE_REGION := Rect2(638, 370, 272, 238)
 const BLUNTBOW_REGION := Rect2(170, 330, 590, 360)
+const STONE_BUTTON_REGION := Rect2(236, 324, 1064, 360)
+const STONE_BUTTON_EXIT_REGION := Rect2(237, 309, 1061, 366)
+const MENU_TEXT_REGION := Rect2(392, 324, 764, 266)
+const SETTINGS_TEXT_REGION := Rect2(392, 352, 764, 238)
+const EXIT_TEXT_REGION := Rect2(409, 365, 748, 171)
 
 
 func _ready() -> void:
@@ -68,10 +85,7 @@ func show_victory() -> void:
 	overlay.visible = true
 	boss_kill_pose.visible = false
 	victory_pose.visible = true
-	again_button.visible = true
-	bye_button.visible = true
-	restart_button.visible = false
-	resume_button.visible = false
+	_layout_overlay_content(true)
 
 
 func show_defeat(source: StringName = &"") -> void:
@@ -79,10 +93,7 @@ func show_defeat(source: StringName = &"") -> void:
 	overlay.visible = true
 	boss_kill_pose.visible = source == &"boss_club"
 	victory_pose.visible = false
-	again_button.visible = false
-	bye_button.visible = true
-	restart_button.visible = true
-	resume_button.visible = false
+	_layout_overlay_content(boss_kill_pose.visible)
 
 
 func show_pause() -> void:
@@ -90,10 +101,7 @@ func show_pause() -> void:
 	overlay.visible = true
 	boss_kill_pose.visible = false
 	victory_pose.visible = false
-	again_button.visible = false
-	restart_button.visible = false
-	resume_button.visible = true
-	bye_button.visible = true
+	_layout_overlay_content(false)
 
 
 func _build_hud() -> void:
@@ -102,6 +110,7 @@ func _build_hud() -> void:
 	root.process_mode = Node.PROCESS_MODE_ALWAYS
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
+	root.resized.connect(_layout_overlay_menu_root)
 
 	var top_panel := PanelContainer.new()
 	top_panel.name = "TopPanel"
@@ -147,58 +156,92 @@ func _build_hud() -> void:
 	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(shade)
 
-	var center := VBoxContainer.new()
-	center.anchor_left = 0.5
-	center.anchor_right = 0.5
-	center.anchor_top = 0.5
-	center.anchor_bottom = 0.5
-	center.offset_left = -180.0
-	center.offset_right = 180.0
-	center.offset_top = -170.0
-	center.offset_bottom = 170.0
-	center.alignment = BoxContainer.ALIGNMENT_CENTER
-	center.add_theme_constant_override("separation", 14)
-	overlay.add_child(center)
+	overlay_menu_root = Control.new()
+	overlay_menu_root.name = "OverlayMenuCanvas"
+	overlay_menu_root.size = OVERLAY_MENU_SIZE
+	overlay.add_child(overlay_menu_root)
+	_layout_overlay_menu_root()
 
 	overlay_title = Label.new()
+	overlay_title.position = Vector2(0.0, 210.0)
+	overlay_title.size = Vector2(OVERLAY_MENU_SIZE.x, 82.0)
 	overlay_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	overlay_title.add_theme_font_size_override("font_size", 42)
-	center.add_child(overlay_title)
+	overlay_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	overlay_title.add_theme_font_size_override("font_size", 60)
+	overlay_menu_root.add_child(overlay_title)
 
 	boss_kill_pose = TextureRect.new()
 	boss_kill_pose.texture = BOSS_KILL_POSE_TEXTURE
-	boss_kill_pose.custom_minimum_size = Vector2(164, 164)
+	boss_kill_pose.position = Vector2((OVERLAY_MENU_SIZE.x - 190.0) * 0.5, 306.0)
+	boss_kill_pose.size = Vector2(190.0, 190.0)
 	boss_kill_pose.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	boss_kill_pose.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	boss_kill_pose.visible = false
-	center.add_child(boss_kill_pose)
+	overlay_menu_root.add_child(boss_kill_pose)
 
 	victory_pose = TextureRect.new()
 	victory_pose.texture = VICTORY_POSE_TEXTURE
-	victory_pose.custom_minimum_size = Vector2(164, 164)
+	victory_pose.position = Vector2((OVERLAY_MENU_SIZE.x - 190.0) * 0.5, 306.0)
+	victory_pose.size = Vector2(190.0, 190.0)
 	victory_pose.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	victory_pose.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	victory_pose.visible = false
-	center.add_child(victory_pose)
+	overlay_menu_root.add_child(victory_pose)
 
-	var buttons := HBoxContainer.new()
-	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
-	buttons.add_theme_constant_override("separation", 12)
-	center.add_child(buttons)
+	var button_x := (OVERLAY_MENU_SIZE.x - OVERLAY_BUTTON_SIZE.x) * 0.5
+	menu_button = _make_overlay_button(
+		Vector2(button_x, 392.0),
+		STONE_BUTTON_TEXTURE,
+		STONE_BUTTON_REGION,
+		MENU_TEXT_TEXTURE,
+		MENU_TEXT_REGION
+	)
+	settings_button = _make_overlay_button(
+		Vector2(button_x, 392.0 + OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP),
+		STONE_BUTTON_TEXTURE,
+		STONE_BUTTON_REGION,
+		SETTINGS_TEXT_TEXTURE,
+		SETTINGS_TEXT_REGION
+	)
+	bye_button = _make_overlay_button(
+		Vector2(button_x, 392.0 + ((OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP) * 2.0)),
+		STONE_BUTTON_EXIT_TEXTURE,
+		STONE_BUTTON_EXIT_REGION,
+		EXIT_TEXT_TEXTURE,
+		EXIT_TEXT_REGION,
+		OVERLAY_EXIT_TEXT_SCALE
+	)
+	overlay_menu_root.add_child(menu_button)
+	overlay_menu_root.add_child(settings_button)
+	overlay_menu_root.add_child(bye_button)
 
-	again_button = _make_button("AGAIN!")
-	resume_button = _make_button("Resume")
-	bye_button = _make_button("I quit.")
-	restart_button = _make_button("AGAIN!")
-	buttons.add_child(again_button)
-	buttons.add_child(resume_button)
-	buttons.add_child(restart_button)
-	buttons.add_child(bye_button)
-
-	again_button.pressed.connect(func() -> void: again_requested.emit())
-	resume_button.pressed.connect(func() -> void: resume_requested.emit())
+	menu_button.pressed.connect(func() -> void: menu_requested.emit())
+	settings_button.pressed.connect(func() -> void: print("Settings placeholder"))
 	bye_button.pressed.connect(func() -> void: bye_requested.emit())
-	restart_button.pressed.connect(func() -> void: restart_requested.emit())
+
+
+func _layout_overlay_menu_root() -> void:
+	if overlay_menu_root == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var scale_factor := minf(viewport_size.x / OVERLAY_MENU_SIZE.x, viewport_size.y / OVERLAY_MENU_SIZE.y)
+	overlay_menu_root.scale = Vector2.ONE * scale_factor
+	overlay_menu_root.position = (viewport_size - (OVERLAY_MENU_SIZE * scale_factor)) * 0.5
+
+
+func _layout_overlay_content(has_pose: bool) -> void:
+	var first_button_y := 392.0
+	overlay_title.position.y = 210.0
+	if has_pose:
+		first_button_y = 520.0
+		overlay_title.position.y = 166.0
+
+	var button_x := (OVERLAY_MENU_SIZE.x - OVERLAY_BUTTON_SIZE.x) * 0.5
+	menu_button.position = Vector2(button_x, first_button_y)
+	settings_button.position = Vector2(button_x, first_button_y + OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP)
+	bye_button.position = Vector2(button_x, first_button_y + ((OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP) * 2.0))
 
 
 func _create_meter(parent: Control, title: String, is_player: bool) -> void:
@@ -232,10 +275,32 @@ func _create_meter(parent: Control, title: String, is_player: bool) -> void:
 		boss_value = value
 
 
-func _make_button(text: String) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.custom_minimum_size = Vector2(96, 40)
+func _make_overlay_button(
+	position: Vector2,
+	button_texture: Texture2D,
+	button_region: Rect2,
+	text_texture: Texture2D,
+	text_region: Rect2,
+	text_scale := OVERLAY_BUTTON_TEXT_SCALE
+) -> TextureButton:
+	var button := TextureButton.new()
+	button.position = position
+	button.size = OVERLAY_BUTTON_SIZE
+	button.ignore_texture_size = true
+	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.texture_normal = _atlas_texture(button_texture, button_region)
+	button.texture_hover = _atlas_texture(button_texture, button_region)
+	button.texture_pressed = _atlas_texture(button_texture, button_region)
+
+	var text_rect := TextureRect.new()
+	text_rect.texture = _atlas_texture(text_texture, text_region)
+	text_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	text_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	text_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var text_size := OVERLAY_BUTTON_SIZE * text_scale
+	text_rect.position = (OVERLAY_BUTTON_SIZE - text_size) * 0.5
+	text_rect.size = text_size
+	button.add_child(text_rect)
 	return button
 
 
