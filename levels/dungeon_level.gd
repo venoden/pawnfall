@@ -81,7 +81,7 @@ signal enemy_defeated_count_changed(count: int)
 	Vector2(1264, 190),
 	Vector2(1264, 898),
 ]
-@export var enemy_respawn_delay := 5.0
+@export var enemy_respawn_delay := 4.65
 @export var placement_retry_count := 10
 
 var player: Node2D
