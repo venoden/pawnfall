@@ -15,8 +15,10 @@ var enemy_value: Label
 var overlay: Control
 var overlay_menu_root: Control
 var overlay_title: Label
+var overlay_title_sprite: TextureRect
 var boss_kill_pose: TextureRect
 var victory_pose: TextureRect
+var resume_button: TextureButton
 var menu_button: TextureButton
 var settings_button: TextureButton
 var bye_button: TextureButton
@@ -27,22 +29,34 @@ const MACE_TEXTURE := preload("res://sprites/mace.png")
 const BLUNTBOW_TEXTURE := preload("res://sprites/bluntbow.png")
 const STONE_BUTTON_TEXTURE := preload("res://pawnfall/menu/stone_button.png")
 const STONE_BUTTON_EXIT_TEXTURE := preload("res://pawnfall/menu/stone_button_exit.png")
+const RESUME_TEXT_TEXTURE := preload("res://pawnfall/menu/resume_text.png")
 const MENU_TEXT_TEXTURE := preload("res://pawnfall/menu/menu_button_text.png")
 const SETTINGS_TEXT_TEXTURE := preload("res://pawnfall/menu/settings_button_text.png")
 const EXIT_TEXT_TEXTURE := preload("res://pawnfall/menu/exit_button_text.png")
+const PAUSED_TEXT_TEXTURE := preload("res://pawnfall/menu/paused_text.png")
+const VICTORY_TEXT_TEXTURE := preload("res://pawnfall/menu/victory_text.png")
+const DEFEAT_TEXT_TEXTURE := preload("res://pawnfall/menu/defeat_text.png")
 
 const OVERLAY_MENU_SIZE := Vector2(1920.0, 1080.0)
 const OVERLAY_BUTTON_SIZE := Vector2(430.0, 146.0)
 const OVERLAY_BUTTON_TEXT_SCALE := 0.58995
 const OVERLAY_EXIT_TEXT_SCALE := 0.621
 const OVERLAY_BUTTON_GAP := 18.0
+const OVERLAY_EXIT_BUTTON_EXTRA_GAP := 42.0
+const PAUSE_TITLE_SIZE := Vector2(650.0, 216.0)
+const END_TITLE_SIZE := Vector2(700.0, 248.0)
+const END_POSE_SIZE := Vector2(300.0, 300.0)
 const MACE_REGION := Rect2(638, 370, 272, 238)
 const BLUNTBOW_REGION := Rect2(170, 330, 590, 360)
 const STONE_BUTTON_REGION := Rect2(236, 324, 1064, 360)
 const STONE_BUTTON_EXIT_REGION := Rect2(237, 309, 1061, 366)
+const RESUME_TEXT_REGION := Rect2(406, 355, 726, 217)
 const MENU_TEXT_REGION := Rect2(392, 324, 764, 266)
 const SETTINGS_TEXT_REGION := Rect2(392, 352, 764, 238)
 const EXIT_TEXT_REGION := Rect2(409, 365, 748, 171)
+const PAUSED_TEXT_REGION := Rect2(420, 350, 690, 229)
+const VICTORY_TEXT_REGION := Rect2(384, 349, 740, 256)
+const DEFEAT_TEXT_REGION := Rect2(394, 332, 739, 355)
 
 
 func _ready() -> void:
@@ -76,32 +90,43 @@ func set_enemy_defeated_count(count: int) -> void:
 
 func show_gameplay() -> void:
 	overlay.visible = false
+	overlay_title_sprite.visible = false
+	resume_button.visible = false
 	boss_kill_pose.visible = false
 	victory_pose.visible = false
 
 
 func show_victory() -> void:
-	overlay_title.text = "Victory"
 	overlay.visible = true
+	overlay_title.visible = false
+	overlay_title_sprite.visible = true
+	overlay_title_sprite.texture = _atlas_texture(VICTORY_TEXT_TEXTURE, VICTORY_TEXT_REGION)
+	resume_button.visible = false
 	boss_kill_pose.visible = false
 	victory_pose.visible = true
-	_layout_overlay_content(true)
+	_layout_end_overlay_content()
 
 
 func show_defeat(source: StringName = &"") -> void:
-	overlay_title.text = "Defeated"
 	overlay.visible = true
-	boss_kill_pose.visible = source == &"boss_club"
+	overlay_title.visible = false
+	overlay_title_sprite.visible = true
+	overlay_title_sprite.texture = _atlas_texture(DEFEAT_TEXT_TEXTURE, DEFEAT_TEXT_REGION)
+	resume_button.visible = false
+	boss_kill_pose.visible = true
 	victory_pose.visible = false
-	_layout_overlay_content(boss_kill_pose.visible)
+	_layout_end_overlay_content()
 
 
 func show_pause() -> void:
-	overlay_title.text = "Paused"
 	overlay.visible = true
+	overlay_title.visible = false
+	overlay_title_sprite.visible = true
+	overlay_title_sprite.texture = _atlas_texture(PAUSED_TEXT_TEXTURE, PAUSED_TEXT_REGION)
+	resume_button.visible = true
 	boss_kill_pose.visible = false
 	victory_pose.visible = false
-	_layout_overlay_content(false)
+	_layout_pause_overlay_content()
 
 
 func _build_hud() -> void:
@@ -170,10 +195,18 @@ func _build_hud() -> void:
 	overlay_title.add_theme_font_size_override("font_size", 60)
 	overlay_menu_root.add_child(overlay_title)
 
+	overlay_title_sprite = TextureRect.new()
+	overlay_title_sprite.position = Vector2((OVERLAY_MENU_SIZE.x - END_TITLE_SIZE.x) * 0.5, 82.0)
+	overlay_title_sprite.size = END_TITLE_SIZE
+	overlay_title_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	overlay_title_sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	overlay_title_sprite.visible = false
+	overlay_menu_root.add_child(overlay_title_sprite)
+
 	boss_kill_pose = TextureRect.new()
 	boss_kill_pose.texture = BOSS_KILL_POSE_TEXTURE
-	boss_kill_pose.position = Vector2((OVERLAY_MENU_SIZE.x - 190.0) * 0.5, 306.0)
-	boss_kill_pose.size = Vector2(190.0, 190.0)
+	boss_kill_pose.position = Vector2(1234.0, 344.0)
+	boss_kill_pose.size = END_POSE_SIZE
 	boss_kill_pose.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	boss_kill_pose.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	boss_kill_pose.visible = false
@@ -181,14 +214,21 @@ func _build_hud() -> void:
 
 	victory_pose = TextureRect.new()
 	victory_pose.texture = VICTORY_POSE_TEXTURE
-	victory_pose.position = Vector2((OVERLAY_MENU_SIZE.x - 190.0) * 0.5, 306.0)
-	victory_pose.size = Vector2(190.0, 190.0)
+	victory_pose.position = Vector2(1234.0, 344.0)
+	victory_pose.size = END_POSE_SIZE
 	victory_pose.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	victory_pose.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	victory_pose.visible = false
 	overlay_menu_root.add_child(victory_pose)
 
 	var button_x := (OVERLAY_MENU_SIZE.x - OVERLAY_BUTTON_SIZE.x) * 0.5
+	resume_button = _make_overlay_button(
+		Vector2(button_x, 392.0),
+		STONE_BUTTON_TEXTURE,
+		STONE_BUTTON_REGION,
+		RESUME_TEXT_TEXTURE,
+		RESUME_TEXT_REGION
+	)
 	menu_button = _make_overlay_button(
 		Vector2(button_x, 392.0),
 		STONE_BUTTON_TEXTURE,
@@ -211,10 +251,12 @@ func _build_hud() -> void:
 		EXIT_TEXT_REGION,
 		OVERLAY_EXIT_TEXT_SCALE
 	)
+	overlay_menu_root.add_child(resume_button)
 	overlay_menu_root.add_child(menu_button)
 	overlay_menu_root.add_child(settings_button)
 	overlay_menu_root.add_child(bye_button)
 
+	resume_button.pressed.connect(func() -> void: resume_requested.emit())
 	menu_button.pressed.connect(func() -> void: menu_requested.emit())
 	settings_button.pressed.connect(func() -> void: print("Settings placeholder"))
 	bye_button.pressed.connect(func() -> void: bye_requested.emit())
@@ -231,17 +273,27 @@ func _layout_overlay_menu_root() -> void:
 	overlay_menu_root.position = (viewport_size - (OVERLAY_MENU_SIZE * scale_factor)) * 0.5
 
 
-func _layout_overlay_content(has_pose: bool) -> void:
-	var first_button_y := 392.0
-	overlay_title.position.y = 210.0
-	if has_pose:
-		first_button_y = 520.0
-		overlay_title.position.y = 166.0
-
+func _layout_pause_overlay_content() -> void:
 	var button_x := (OVERLAY_MENU_SIZE.x - OVERLAY_BUTTON_SIZE.x) * 0.5
+	var first_button_y := 280.0
+	overlay_title_sprite.size = PAUSE_TITLE_SIZE
+	overlay_title_sprite.position = Vector2((OVERLAY_MENU_SIZE.x - PAUSE_TITLE_SIZE.x) * 0.5, 54.0)
+	resume_button.position = Vector2(button_x, first_button_y)
+	menu_button.position = Vector2(button_x, first_button_y + OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP)
+	settings_button.position = Vector2(button_x, first_button_y + ((OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP) * 2.0))
+	bye_button.position = Vector2(button_x, first_button_y + ((OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP) * 3.0) + OVERLAY_EXIT_BUTTON_EXTRA_GAP)
+
+
+func _layout_end_overlay_content() -> void:
+	var button_x := (OVERLAY_MENU_SIZE.x - OVERLAY_BUTTON_SIZE.x) * 0.5
+	var first_button_y := 356.0
+	overlay_title_sprite.size = END_TITLE_SIZE
+	overlay_title_sprite.position = Vector2((OVERLAY_MENU_SIZE.x - END_TITLE_SIZE.x) * 0.5, 72.0)
+	boss_kill_pose.position = Vector2(1234.0, 344.0)
+	victory_pose.position = Vector2(1234.0, 344.0)
 	menu_button.position = Vector2(button_x, first_button_y)
 	settings_button.position = Vector2(button_x, first_button_y + OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP)
-	bye_button.position = Vector2(button_x, first_button_y + ((OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP) * 2.0))
+	bye_button.position = Vector2(button_x, first_button_y + ((OVERLAY_BUTTON_SIZE.y + OVERLAY_BUTTON_GAP) * 2.0) + OVERLAY_EXIT_BUTTON_EXTRA_GAP)
 
 
 func _create_meter(parent: Control, title: String, is_player: bool) -> void:
