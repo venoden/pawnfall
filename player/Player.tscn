@@ -34,10 +34,10 @@ position = Vector2(34, 22)
 
 [node name="WeaponSprite" type="Sprite2D" parent="Visual/HandSocket"]
 z_index = 2
-position = Vector2(0, -12)
-rotation = -0.95
+position = Vector2(2, 4)
+rotation = -0.82
 scale = Vector2(0.306, 0.306)
-offset = Vector2(62, -66)
+offset = Vector2(70, -22)
 texture = ExtResource("4_starter_weapon")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

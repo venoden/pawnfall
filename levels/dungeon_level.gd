@@ -51,13 +51,7 @@ signal enemy_defeated_count_changed(count: int)
 @export var boss_spawn := Vector2(1278, 543)
 @export var enemy_count := 5
 @export var enemy_spawn_points: Array[Vector2] = [
-	Vector2(328, 252),
-	Vector2(386, 822),
-	Vector2(724, 318),
-	Vector2(760, 758),
-	Vector2(1058, 294),
-	Vector2(1128, 812),
-	Vector2(1244, 440),
+	Vector2(724, 132),
 ]
 
 @export_category("Pickups")
@@ -69,7 +63,7 @@ signal enemy_defeated_count_changed(count: int)
 @export var health_pickup_heal := 15.0
 @export var health_pickup_max_bonus := 15.0
 @export var chest_point := Vector2(724, 890)
-@export var chest_unlock_kill_count := 10
+@export var chest_unlock_kill_count := 7
 
 @export_category("Hazards")
 @export var torch_burn_dps := 3.0
@@ -81,7 +75,7 @@ signal enemy_defeated_count_changed(count: int)
 	Vector2(1264, 190),
 	Vector2(1264, 898),
 ]
-@export var enemy_respawn_delay := 4.65
+@export var enemy_respawn_delay := 4.185
 @export var placement_retry_count := 10
 
 var player: Node2D
@@ -362,10 +356,10 @@ func _spawn_player() -> void:
 func _spawn_boss() -> void:
 	boss = boss_scene.instantiate() as Node2D
 	add_child(boss)
-	boss.global_position = _find_safe_position(boss_spawn, 92.0, true)
+	boss.global_position = _find_safe_position(boss_spawn, 74.0, true)
 	if boss.global_position == Vector2.INF:
 		boss.global_position = boss_spawn
-	_reserve_point(boss.global_position, 108.0)
+	_reserve_point(boss.global_position, 90.0)
 	if boss.has_signal("defeated"):
 		boss.connect("defeated", Callable(self, "_on_boss_defeated"))
 	boss.set("room_min", Vector2(wall_thickness, wall_thickness))

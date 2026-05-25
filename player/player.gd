@@ -118,7 +118,7 @@ func set_weapon(new_weapon_id: StringName) -> void:
 	else:
 		weapon_sprite.texture = _atlas_texture(MACE_TEXTURE, MACE_REGION)
 		weapon_sprite.scale = Vector2(0.306, 0.306)
-		weapon_sprite.offset = Vector2(62.0, -66.0)
+		weapon_sprite.offset = Vector2(70.0, -22.0)
 	weapon_changed.emit(weapon_id)
 
 
@@ -304,8 +304,8 @@ func _update_visuals(delta: float) -> void:
 			swing_amount = sin(clampf(swing_progress, 0.0, 1.0) * PI) * float(mace_swing_visual_side)
 		hand_socket.position = Vector2(34.0, 22.0 + bob * 0.25)
 		hand_socket.rotation = flop * 0.16 + swing_amount * 0.92
-		weapon_sprite.position = Vector2(0.0, -12.0)
-		weapon_sprite.rotation = -0.95
+		weapon_sprite.position = Vector2(2.0, 4.0)
+		weapon_sprite.rotation = -0.82
 
 
 func _turn_blend(delta: float) -> float:
